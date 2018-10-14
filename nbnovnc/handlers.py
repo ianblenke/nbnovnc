@@ -40,6 +40,8 @@ class NBNoVNC(Configurable):
         help="Command to start VNC server. Contains string replacement fields.")
     websockify_command = Unicode(u"websockify --web {novnc_directory} --heartbeat {heartbeat} {port} localhost:{vnc_port}", config=True,
         help="websockify command. Contains string replacement fields.")
+    helper_command = Unicode(u"sleep 60", config=True,
+        help="Allow a supervisord spawn of a helper command.")
 
 class NoVNCHandler(SupervisorHandler):
     '''Supervise novnc, websockify, and a VNC server.'''
@@ -73,6 +75,17 @@ class NoVNCHandler(SupervisorHandler):
                 depth=self.c.depth
             ),
             'priority': 10,
+        }
+        config['program:helper'] = {
+            'command': self.c.helper_command.format(
+                novnc_directory=self.c.novnc_directory,
+                display=self.display,
+                geometry=self.c.geometry,
+                depth=self.c.depth,
+                port=self.port,
+                vnc_port=self.vnc_port
+            ),
+            'priority': 15,
         }
         config['program:websockify'] = {
             'command': self.c.websockify_command.format(
